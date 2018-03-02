@@ -38,13 +38,37 @@ function getServedPath(appPackageJson) {
   return ensureSlash(servedUrl, true);
 }
 
+const appJsList = (()=>{
+    let srcPath = resolveApp('src/pages');
+    let files = fs.readdirSync(srcPath);
+    let result = [];
+    files.forEach((fileName) =>{
+      result.push({name: fileName, path: `${srcPath}/${fileName}/index.js`});
+    });
+    return result;
+})();
+
+const appHtmlList = (()=>{
+    let htmlPath = resolveApp('public');
+    let files = fs.readdirSync(htmlPath);
+    let result = [];
+    files.forEach((fileName) =>{
+      if(fileName.match(/(.+)\.html$/)){
+        result.push({name: fileName.replace(/(\.html)/, ""), path: `${htmlPath}/${fileName}`});
+      }
+    });
+    return result;
+})();
+
 // config after eject: we're in ./config/
 module.exports = {
   dotenv: resolveApp('.env'),
   appBuild: resolveApp('build'),
   appPublic: resolveApp('public'),
-  appHtml: resolveApp('public/index.html'),
-  appIndexJs: resolveApp('src/index.js'),
+  // appHtml: resolveApp('public/index.html'),
+  // appIndexJs: resolveApp('src/index.js'),
+  appHtmlList,
+  appJsList,
   appPackageJson: resolveApp('package.json'),
   appSrc: resolveApp('src'),
   yarnLockFile: resolveApp('yarn.lock'),
