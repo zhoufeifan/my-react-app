@@ -8,7 +8,6 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin');
 // const ManifestPlugin = require('webpack-manifest-plugin');
 // const InterpolateHtmlPlugin = require('react-dev-utils/InterpolateHtmlPlugin');
 // const SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin');
-// const HappyPack = require('happypack');
 const ModuleScopePlugin = require('react-dev-utils/ModuleScopePlugin');
 const paths = require('./paths');
 const getClientEnvironment = require('./env');
@@ -46,8 +45,6 @@ if (env.stringified['process.env'].NODE_ENV !== '"production"') {
 
 // Note: defined here because it will be used more than once.
 const cssFilename = '[name].css';
-
-console.log(require.resolve('babel-loader'));
 
 // ExtractTextPlugin expects the build output to be flat.
 // (See https://github.com/webpack-contrib/extract-text-webpack-plugin/issues/27)
@@ -154,17 +151,6 @@ module.exports = {
               ]
             },
           },
-          // {
-          //   test: /\.js$/,
-          //   use: ['happypack/loader?id=babel'],
-          //   include: paths.appSrc,
-          //   options: {
-          //     compact: true,
-          //     "plugins": [
-          //         ["import", { "libraryName": "antd", "libraryDirectory": "es", "style": true }] // `style: true` 会加载 less 文件
-          //     ]
-          //   },
-          // },
           // The notation here is somewhat confusing.
           // "postcss" loader applies autoprefixer to our CSS.
           // "css" loader resolves paths in CSS and adds assets as dependencies.
@@ -345,11 +331,6 @@ module.exports = {
     ],
   },
   plugins: [
-    // new HappyPack({
-    //   // 用唯一的标识符 id 来代表当前的 HappyPack 是用来处理一类特定的文件
-    //   id: 'babel',
-    //   loaders: ['babel-loader'],
-    // }),
     new webpack.DefinePlugin(env.stringified),
     // Minify the code.
     new webpack.optimize.UglifyJsPlugin({
