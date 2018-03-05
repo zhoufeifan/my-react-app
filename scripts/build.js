@@ -46,6 +46,7 @@ measureFileSizesBeforeBuild(paths.appBuild)
     // Merge with the public folder
     // copyPublicFolder();
     // Start the webpack build
+      console.time("pack");
     return build(previousFileSizes);
   })
   .then(
@@ -66,7 +67,7 @@ measureFileSizesBeforeBuild(paths.appBuild)
       } else {
         console.log(chalk.green('Compiled successfully.\n'));
       }
-
+      console.timeEnd('pack');
       console.log('File sizes after gzip:\n');
       printFileSizesAfterBuild(
         stats,
