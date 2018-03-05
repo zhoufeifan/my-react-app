@@ -8,7 +8,6 @@ const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const ManifestPlugin = require('webpack-manifest-plugin');
 const InterpolateHtmlPlugin = require('react-dev-utils/InterpolateHtmlPlugin');
 const SWPrecacheWebpackPlugin = require('sw-precache-webpack-plugin');
-const eslintFormatter = require('react-dev-utils/eslintFormatter');
 const ModuleScopePlugin = require('react-dev-utils/ModuleScopePlugin');
 const paths = require('./paths');
 const getClientEnvironment = require('./env');
@@ -27,6 +26,17 @@ const shouldUseSourceMap = process.env.GENERATE_SOURCEMAP !== 'false';
 const publicUrl = publicPath.slice(0, -1);
 // Get environment variables to inject into our app.
 const env = getClientEnvironment(publicUrl);
+
+let entry = {};//配置多入口
+paths.appJsList.forEach((item)=>{
+    entry[item.name] = [
+        require.resolve('react-dev-utils/webpackHotDevClient'),
+        require.resolve('./polyfills'),
+        item.path
+    ];
+});
+entry['vendor'] = [require.resolve('./polyfills'), 'react', 'react-dom', 'moment', 'axios'];
+
 
 // Assert this just to be safe.
 // Development builds of React are slow and not intended for production.
@@ -56,7 +66,7 @@ module.exports = {
   // You can exclude the *.map files from the build during deployment.
   devtool: shouldUseSourceMap ? 'source-map' : false,
   // In production, we only want to load the polyfills and the app code.
-  entry: [require.resolve('./polyfills'), paths.appIndexJs],
+  entry,
   output: {
     // The build folder.
     path: paths.appBuild,
@@ -88,7 +98,7 @@ module.exports = {
     // https://github.com/facebookincubator/create-react-app/issues/290
     // `web` extension prefixes have been added for better support
     // for React Native Web.
-    extensions: ['.js'],
+    extensions: ['.web.js', '.mjs', '.js', '.json', '.web.jsx', '.jsx', '.less'],
     alias: {
         components: path.resolve("src/components"),
     },
@@ -113,16 +123,6 @@ module.exports = {
       {
         test: /\.js$/,
         enforce: 'pre',
-        use: [
-          {
-            options: {
-              formatter: eslintFormatter,
-              eslintPath: require.resolve('eslint'),
-              
-            },
-            loader: require.resolve('eslint-loader'),
-          },
-        ],
         include: paths.appSrc,
       },
       {
@@ -133,7 +133,7 @@ module.exports = {
           // "url" loader works just like "file" loader but it also embeds
           // assets smaller than specified size as data URLs to avoid requests.
           {
-            test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/],
+            test: [/\.png$/,/\.svg$/],
             loader: require.resolve('url-loader'),
             options: {
               limit: 10000,
@@ -142,12 +142,14 @@ module.exports = {
           },
           // Process JS with Babel.
           {
-            test: /\.(js|jsx|mjs)$/,
+            test: /\.js$/,
             include: paths.appSrc,
             loader: require.resolve('babel-loader'),
             options: {
-              
               compact: true,
+              "plugins": [
+                  ["import", { "libraryName": "antd", "libraryDirectory": "es", "style": true }] // `style: true` 会加载 less 文件
+              ]
             },
           },
           // The notation here is somewhat confusing.
@@ -209,6 +211,79 @@ module.exports = {
             ),
             // Note: this won't work without `new ExtractTextPlugin()` in `plugins`.
           },
+          {
+              test: /\.scss$/,
+              use: [
+                  require.resolve('style-loader'),
+                  {
+                      loader: require.resolve('css-loader'),
+                      options: {
+                          importLoaders: 1,
+                      },
+                  },
+                  {
+                      loader: require.resolve('postcss-loader'),
+                      options: {
+                          // Necessary for external CSS imports to work
+                          // https://github.com/facebookincubator/create-react-app/issues/2677
+                          ident: 'postcss',
+                          plugins: () => [
+                              require('postcss-flexbugs-fixes'),
+                              autoprefixer({
+                                  browsers: [
+                                      '>1%',
+                                      'last 4 versions',
+                                      'Firefox ESR',
+                                      'not ie < 9', // React doesn't support IE8 anyway
+                                  ],
+                                  flexbox: 'no-2009',
+                              }),
+                          ],
+                      },
+                  },
+                  {
+                      loader: require.resolve('sass-loader')
+                  },
+              ],
+          },
+          {
+              test: /\.less$/,
+              use: [
+                  require.resolve('style-loader'),
+                  {
+                      loader: require.resolve('css-loader'),
+                      options: {
+                          importLoaders: 1,
+                      },
+                  },
+                  {
+                      loader: require.resolve('postcss-loader'),
+                      options: {
+                          // Necessary for external CSS imports to work
+                          // https://github.com/facebookincubator/create-react-app/issues/2677
+                          ident: 'postcss',
+                          plugins: () => [
+                              require('postcss-flexbugs-fixes'),
+                              autoprefixer({
+                                  browsers: [
+                                      '>1%',
+                                      'last 4 versions',
+                                      'Firefox ESR',
+                                      'not ie < 9', // React doesn't support IE8 anyway
+                                  ],
+                                  flexbox: 'no-2009',
+                              }),
+                          ],
+                      },
+                  },
+                  {
+                      loader: require.resolve('less-loader'),
+                      options: {
+                          modifyVars: {"@primary-color": "#1188F6"},
+                      },
+                  },
+              ],
+          },
           // "file" loader makes sure assets end up in the `build` folder.
           // When you `import` an asset, you get its filename.
           // This loader doesn't use a "test" so it will catch all modules
@@ -231,33 +306,6 @@ module.exports = {
     ],
   },
   plugins: [
-    // Makes some environment variables available in index.html.
-    // The public URL is available as %PUBLIC_URL% in index.html, e.g.:
-    // <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
-    // In production, it will be an empty string unless you specify "homepage"
-    // in `package.json`, in which case it will be the pathname of that URL.
-    new InterpolateHtmlPlugin(env.raw),
-    // Generates an `index.html` file with the <script> injected.
-    new HtmlWebpackPlugin({
-      inject: true,
-      template: paths.appHtml,
-      minify: {
-        removeComments: true,
-        collapseWhitespace: true,
-        removeRedundantAttributes: true,
-        useShortDoctype: true,
-        removeEmptyAttributes: true,
-        removeStyleLinkTypeAttributes: true,
-        keepClosingSlash: true,
-        minifyJS: true,
-        minifyCSS: true,
-        minifyURLs: true,
-      },
-    }),
-    // Makes some environment variables available to the JS code, for example:
-    // if (process.env.NODE_ENV === 'production') { ... }. See `./env.js`.
-    // It is absolutely essential that NODE_ENV was set to production here.
-    // Otherwise React will be compiled in the very slow development mode.
     new webpack.DefinePlugin(env.stringified),
     // Minify the code.
     new webpack.optimize.UglifyJsPlugin({

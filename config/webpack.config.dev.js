@@ -7,7 +7,6 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 const InterpolateHtmlPlugin = require('react-dev-utils/InterpolateHtmlPlugin');
 const WatchMissingNodeModulesPlugin = require('react-dev-utils/WatchMissingNodeModulesPlugin');
-const eslintFormatter = require('react-dev-utils/eslintFormatter');
 const ModuleScopePlugin = require('react-dev-utils/ModuleScopePlugin');
 const getClientEnvironment = require('./env');
 const paths = require('./paths');
@@ -84,7 +83,7 @@ module.exports = {
     // https://github.com/facebookincubator/create-react-app/issues/290
     // `web` extension prefixes have been added for better support
     // for React Native Web.
-    extensions: ['.js'],
+    extensions: ['.web.js', '.mjs', '.js', '.json', '.web.jsx', '.jsx', '.less'],
     alias: {
       components: path.resolve("src/components"),
     },
@@ -109,16 +108,6 @@ module.exports = {
       {
         test: /\.js$/,
         enforce: 'pre',
-        use: [
-          {
-            options: {
-              formatter: eslintFormatter,
-              eslintPath: require.resolve('eslint'),
-              
-            },
-            loader: require.resolve('eslint-loader'),
-          },
-        ],
         include: paths.appSrc,
       },
       {
@@ -130,7 +119,7 @@ module.exports = {
           // smaller than specified limit in bytes as data URLs to avoid requests.
           // A missing `test` is equivalent to a match.
           {
-            test: [/\.bmp$/, /\.gif$/, /\.jpe?g$/, /\.png$/],
+            test: [/\.png$/,/\.svg$/],
             loader: require.resolve('url-loader'),
             options: {
               limit: 10000,
@@ -139,15 +128,17 @@ module.exports = {
           },
           // Process JS with Babel.
           {
-            test: /\.(js|jsx|mjs)$/,
+            test: /\.js$/,
             include: paths.appSrc,
             loader: require.resolve('babel-loader'),
             options: {
-              
               // This is a feature of `babel-loader` for webpack (not Babel itself).
               // It enables caching results in ./node_modules/.cache/babel-loader/
               // directory for faster rebuilds.
               cacheDirectory: true,
+              "plugins": [
+                ["import", { "libraryName": "antd", "libraryDirectory": "es", "style": true }] // `style: true` 会加载 less 文件
+              ]
             },
           },
           // "postcss" loader applies autoprefixer to our CSS.
@@ -185,6 +176,79 @@ module.exports = {
                   ],
                 },
               },
+            ],
+          },
+          {
+              test: /\.scss$/,
+              use: [
+                  require.resolve('style-loader'),
+                  {
+                      loader: require.resolve('css-loader'),
+                      options: {
+                          importLoaders: 1,
+                      },
+                  },
+                  {
+                      loader: require.resolve('postcss-loader'),
+                      options: {
+                          // Necessary for external CSS imports to work
+                          // https://github.com/facebookincubator/create-react-app/issues/2677
+                          ident: 'postcss',
+                          plugins: () => [
+                              require('postcss-flexbugs-fixes'),
+                              autoprefixer({
+                                  browsers: [
+                                      '>1%',
+                                      'last 4 versions',
+                                      'Firefox ESR',
+                                      'not ie < 9', // React doesn't support IE8 anyway
+                                  ],
+                                  flexbox: 'no-2009',
+                              }),
+                          ],
+                      },
+                  },
+                  {
+                      loader: require.resolve('sass-loader')
+                  },
+              ],
+          },
+          {
+            test: /\.less$/,
+            use: [
+                require.resolve('style-loader'),
+                {
+                    loader: require.resolve('css-loader'),
+                    options: {
+                        importLoaders: 1,
+                    },
+                },
+                {
+                    loader: require.resolve('postcss-loader'),
+                    options: {
+                        // Necessary for external CSS imports to work
+                        // https://github.com/facebookincubator/create-react-app/issues/2677
+                        ident: 'postcss',
+                        plugins: () => [
+                            require('postcss-flexbugs-fixes'),
+                            autoprefixer({
+                                browsers: [
+                                    '>1%',
+                                    'last 4 versions',
+                                    'Firefox ESR',
+                                    'not ie < 9', // React doesn't support IE8 anyway
+                                ],
+                                flexbox: 'no-2009',
+                            }),
+                        ],
+                    },
+                },
+                {
+                    loader: require.resolve('less-loader'),
+                    options: {
+                        modifyVars: {"@primary-color": "#1188F6"},
+                    },
+                },
             ],
           },
           // "file" loader makes sure those assets get served by WebpackDevServer.
