@@ -11,6 +11,7 @@ process.on('unhandledRejection', err => {
   throw err;
 });
 
+
 // Ensure environment variables are read.
 require('../config/env');
 
@@ -101,6 +102,11 @@ measureFileSizesBeforeBuild(paths.appBuild)
 // Create the production build and print the deployment instructions.
 function build(previousFileSizes) {
   console.log('Creating an optimized production build...');
+
+  if(process.argv[2]){
+      const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+      config.plugins.push(new BundleAnalyzerPlugin());
+  }
 
   let compiler = webpack(config);
   return new Promise((resolve, reject) => {
