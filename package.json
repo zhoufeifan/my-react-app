@@ -16,8 +16,7 @@
     "qs": "^6.5.1",
     "react": "^16.0.0",
     "react-dom": "^16.0.0",
-    "react-router": "^4.2.0",
-    "react-router-dom": "^4.2.2"
+    "terrible-components": "^1.0.6"
   },
   "devDependencies": {
     "autoprefixer": "7.1.6",
